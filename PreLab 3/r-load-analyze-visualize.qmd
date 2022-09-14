@@ -269,9 +269,14 @@ summary(Reporters$Salary)
 
 Questions:
 
-    1: Who is making $230,504 as a reporter???   
-    2: Make a table for editors, figure out medians.   
-    3: Find highest paid editor. Resent them.   
+    1: Who is making $230,504 as a reporter???  
+    A Senior Reporter at ProPublica.
+    2: Make a table for editors, figure out medians.
+    > summary(Editors$Salary)
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    11.5  45000.0  60240.0  64378.6  75000.0 245000.0 
+    3: Find highest paid editor. Resent them.
+    Editorial Director at CondeNast
     4: Make a table for any position involving data  
 
 Table with Black reporters at Wall Street Journal
@@ -350,20 +355,20 @@ This is a basic chart using ggplot. To break down the code:
 
     1: Build a table for NewYorkTimes employees, and determine median salary of NewYorkTimes employees   
 ```{r}
-#your answer here
+#your answer here A: Median Salary is $52000.
 ```
 
 
       2: Identify title, gender and race of the highest paid position at NYT  
 ```{r}
-#your answer here
+#your answer here Executive Editor, News, Black, noanswer for gender.
 ```
 
 
     3: Search for Bloomberg,  check median salary, compare to NYT results above.
 
 ```{r}
-#your answer here
+#your answer here Median Salary: $50000.$2000 less than New York Times.
 
 ```
 
