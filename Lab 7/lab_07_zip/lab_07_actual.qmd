@@ -12,7 +12,19 @@ When you are finished, commit changes and push to your personal GitHub repo, the
 ## Load libraries and establish settings
 **Task**: Make a code block and load janitor and the tidyverse
 
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
 ## Load data
+```{r}
+arcos <- read_csv("data/arcos.csv")
+county_population_2014 <- read_csv("data/county_population_2014.csv")
+state_crosswalk <- read_csv("data/state_crosswalk.csv")
+state_population_2014 <- read_csv("data/state_population_2014.csv")
+```
+
 
 For today's lab, we are using the DEA's ARCOS database, which tracks shipments of opioids and other controlled substances from manufacturers to pharmacies.  As we will read this week, the Washington Post used this data to show which communities were flooded by opioids during the death and overdose crisis of the last two decades. 
 
@@ -29,7 +41,107 @@ There are four tables in the data folder.
 **Task** Create codeblocks in the space below and answer the questions. 
 
 **Q1** Which county or city received the most total opioid pills per person? Add up all the pills between 2006 and 2014 when doing this calculation. How many total pills, and what was the per person rate?
+A: Los Angeles County had the most total pills with 1712000643. Norton City had the most pills distributed per person with 2628.9 pills. 
+```{r}
+arcos_total <-arcos %>% group_by(countyfips, buyer_county) %>% summarize(total_pills = sum(total_pills)) %>%
+  arrange(desc(total_pills))
+```
+
+```{r}
+arcos_pop <- arcos_total %>% 
+  inner_join(county_population_2014, by=c("countyfips"="geoid"))
+```
+
+```{r}
+arcos_pop %>%
+  select(buyer_county, total_pills, total_population_2014) %>%
+    mutate(per_person = (total_pills/total_population_2014)) %>% 
+  arrange(desc(per_person))
+```
+
 
 **Q2** Which U.S. state had the highest number of opioid pills per person for pills shipped in 2014? How many total pills, and what was the per person rate? How did that compare to Washington, D.C.?
 
+A: West Virginia had the highest per person rate of pills in 2014 with 65.1 per person. California had the highest total pills of 2014 with 1161408034. DC had the lowest rate of pills per person in 2014 with just 13.5 distributed per person.
+
+```{r}
+state_total <-arcos %>% group_by(buyer_state, year) %>% summarize(total_pills = sum(total_pills)) %>%
+  arrange(desc(total_pills)) %>% 
+filter(year ==2014)
+```
+
+```{r}
+state_total_names <- state_total %>%
+  mutate(
+    state = case_when(
+      buyer_state == 'NC' ~ "North Carolina",
+      buyer_state == 'WY' ~ "Wyoming",
+      buyer_state == 'WI' ~ "Wisconsin",
+      buyer_state == 'WV' ~ "West Virginia",
+      buyer_state == 'WA' ~ "Washington",
+      buyer_state == 'VA' ~ "Virginia",
+      buyer_state == 'VT' ~ "Vermont",
+      buyer_state == 'UT' ~ "Utah",
+      buyer_state == 'TX' ~ "Texas",
+      buyer_state == 'TN' ~ "Tennessee",
+      buyer_state == 'SD' ~ "South Dakota",
+      buyer_state == 'SC' ~ "South Carolina",
+      buyer_state == 'RI' ~ "Rhode Island",
+      buyer_state == 'PA' ~ "Pennsylvania",
+      buyer_state == 'OR' ~ "Oregon",
+      buyer_state == 'OK' ~ "Oklahoma",
+      buyer_state == 'OH' ~ "Ohio",
+      buyer_state == 'ND' ~ "North Dakota",
+      buyer_state == 'NY' ~ "New York",
+      buyer_state == 'NM' ~ "New Mexico",
+      buyer_state == 'NJ' ~ "New Jersey",
+      buyer_state == 'NH' ~ "New Hampshire",
+      buyer_state == 'NV' ~ "Nevada",
+      buyer_state == 'NE' ~ "Nebraska",
+      buyer_state == 'MT' ~ "Montana",
+      buyer_state == 'MO' ~ "Missouri",
+      buyer_state == 'MS' ~ "Mississippi",
+      buyer_state == 'MN' ~ "Minnesota",
+      buyer_state == 'MI' ~ "Michigan",
+      buyer_state == 'MA' ~ "Massachusetts",
+      buyer_state == 'ME' ~ "Maine",
+      buyer_state == 'LA' ~ "Louisiana",
+      buyer_state == 'KY' ~ "Kentucky",
+      buyer_state == 'KS' ~ "Kansas",
+      buyer_state == 'IA' ~ "Iowa",
+      buyer_state == 'IN' ~ "Indiana",
+      buyer_state == 'IL' ~ "Illinois",
+      buyer_state == 'ID' ~ "Idaho",
+      buyer_state == 'HI' ~ "Hawaii",
+      buyer_state == 'GA' ~ "Georgia",
+      buyer_state == 'FL' ~ "Florida",
+      buyer_state == 'DE' ~ "Deleware",
+      buyer_state == 'CT' ~ "Connecticut",
+      buyer_state == 'CO' ~ "Colorado",
+      buyer_state == 'CA' ~ "California",
+      buyer_state == 'AR' ~ "Arkansas",
+      buyer_state == 'AZ' ~ "Arizona",
+      buyer_state == 'AK' ~ "Alaska",
+      buyer_state == 'AL' ~ "Alabama",
+      buyer_state == 'MD' ~ "Maryland",
+      buyer_state == 'DC' ~ "District of Columbia"
+    )
+  ) 
+```
+
+```{r}
+state_pop_arcos <- state_total_names %>%
+  inner_join(state_population_2014, by="state")
+```
+
+```{r}
+state_pop_arcos %>%
+  select(state, total_pills, total_population_2014) %>%
+    mutate(per_person = (total_pills/total_population_2014)) %>% 
+  arrange(desc(per_person))
+```
+
+
 **Q3** Write a sentence that could be dropped in as the lede of a news story from the finding in question two. 
+
+A: Washington D.C. had the lowest rate of opiod pills distributed in 2014, with just 13.5 pills per person, almost 10 pills lower than the next lowest state.
