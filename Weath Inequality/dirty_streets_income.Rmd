@@ -5,16 +5,26 @@ date: "2022-10-06"
 output: html_document
 ---
 
+Looking at data for the city of Baltimore, I wanted to see if there was any relation between the median household income for neighborhoods in Baltimore and the amount of 311 calls received per year pertaining to dirty streets complaints. Some questions I set out to answer were: Have the number of complaints risen or fallen in the last decade? Is there a correlation between dirty street complaints and the median household income? And, have the streets gotten dirtier in places where income has decreased? 
+
 ```{r}
 library(tidyverse)
 library(janitor)
 
 ```
 
+The datasets used in this document both come from the Baltimore Neighborhood Indicators Alliance. The open data portal can be found at this link: https://vital-signs-bniajfi.hub.arcgis.com/.
+
+The numbers in the table labeled "income" represent the median household income for each neighborhood in Baltimore from the years 2010-2020.
+
+The data table labeled "dirty_streets" is 311 data of complaints about dirty streets in each neighborhood in Baltimore per year per 1,000 residents. This data table includes numbers from the years 2010-2020.
+
 ```{r}
-income <- read_csv("Median_Household_Income (1).csv")
+income <- read.csv("Median_Household_Income (1).csv")
 dirty_streets <- read.csv("Dirty_streets.csv")
 ```
+
+The below code sets up a new table that now shows the percent difference in income in every Baltimore neighborhood from 2010-2020. The table includes the difference in total income and the percent change in 2020 from 2010. It is organized by the largest drop in income in the 10 year span.
 
 ```{r}
 diff_income <-income %>%
@@ -24,6 +34,8 @@ diff_income <-income %>%
     arrange(Diff_Pct_2020)
 ```
 
+
+This code is the same as the one above, but for the percentage of dirty street complaint increase or decrease from 2010 to 2020. It is arranged by which neighborhood saw the highest percent increase in dirty streets complaint calls per 1,000 people throughout the decade.
 ```{r}
 diff_streets <-dirty_streets %>%
   select(CSA2010, dirtyst10, dirtyst20) %>%
@@ -32,6 +44,8 @@ diff_streets <-dirty_streets %>%
   arrange(desc(Diff_Pct_2020))
 ```
 
+
+Below, I have created a table showing the top 5 neighborhoods with the highest percent increase in dirty streets complaints from 2010-2020, and put it into a data visualization, so you can see how drastic this increase is in some of these neighborhoods.
 ```{r}
 top5_diff_streets <- diff_streets %>% 
   slice_max(Diff_Pct_2020, n=5)
@@ -41,12 +55,18 @@ top5_diff_streets %>%
   coord_flip() + 
   theme_minimal()+
     labs(
-    title="Largest Increase In Dirty Streets, Baltimore 2010-2020",
+    title="Largest Increase In Dirty Streets Complaints, Baltimore 2010-2020",
     x = "Neighborhood",
     y = "Percent Increase of Dirty Street Calls",
     caption = "source: Baltimore 311 Service Call Data, 2010-2020")
 ```
 
 
+Only two Baltimore neighborhoods saw a decrease in median household income from 2010-2020. The largest, Westport/Mount Winans/Lakeland, actually saw a 4.5 percent decrease in the number of dirty streets complaints during that time. The other neighborhood, Brooklyn/Curtis Bay/Hawkins Point, saw an 18.4 percent increase in dirty streets complaints for this period. However, there were many others that had a much higher percent increase in dirty streets that saw a boost in their incomes. For example, Mount Washington/Coldspring saw the highest increase in dirty streets complaint calls per 1,000 people, with a 390 percent increase. They were still in the top 10 in lowest change of income, but it did rise by 9 percent from 2010-2020. One of the more surprising results was the neighborhood of Dickeyville/Franklintown, who saw a 35 percent increase in income, but also doubled the amount of dirty streets complaints during this period. To answer some of the questions I posed in the beginning, there were more Baltimore neighborhoods that saw a decrease in dirty streets complaints per 1,000 people from 2010-2020, with 32 of them seeing a decrease, and 23 of them increasing. However, there is no firm correlation between the rise in income of these neighborhoods and a decrease in dirty streets complaints. For the two neighborhoods that decreased in median household income, one of them did see an increase in dirty streets complaints, while the other decreased. What I want to base my story around is the neighborhoods that did see an increase of income and decrease of dirty streets complaint calls. For example, the neighborhood with the highest total decrease of complaint calls was Madison/East End, seeing a 271.1 decrease in calls per 1,000 people, but only had an income increase of 11.8 percent, putting it in the top 15 lowest increases of the 55 total neighborhoods. I would like to investigate how this has happened and what factors in the past decade have led to such a large decrease, with only a minor change in income. 
 
+
+Tweets
+1. Despite seeing a sharp decrease in dirty street complaint calls per 1,000 people, the Baltimore neighborhood of Madison/East End only had a small increase in median household income over that time period, being in the top 15 of the lowest increasing neighborhoods.
+
+2. The Baltimore neighborhood of Westport, Mount Winans, Lakeland suffered a 14 percent decrease in median household income from 2010-2020. However, they also saw a 4 percent decrease in the amount of 311 calls concerning dirty street complaints during that time.
 
