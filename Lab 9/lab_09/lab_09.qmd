@@ -1,0 +1,87 @@
+#lab_08
+Sean Mussenden, Aug 16, 2022
+
+## About this lab
+
+To complete this lab, you need to:
+* write code in empty codeblocks provided to answer questions included (look for **Q**).
+* write out the answer in the form of a complete sentence in the space given (look for **A**).
+
+When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+## Load libraries and establish settings
+**Task**: Load janitor and the tidyverse and sf
+```{r}
+library(tidyverse)
+library(janitor)
+library(sf)
+```
+
+## Load data
+
+You have been given two spatial dataframes and one regular dataframe to load.  The dataframes are:
+
+* baltimore_homicides.rds | spatial | location and details about each Baltimore homicide between 2007 and 2017, including information about the status (open, closed with arrest, closed without arrest) and the exact location. Details on the data: https://github.com/washingtonpost/data-homicides
+* baltimore_tract_shapefiles.rds | spatial | polygons of each census tract in Baltimore
+* baltimore_tract_demographics.rds | regular | the total population and white population of each baltimore Census tract in 2017.
+
+**Task** Load the data
+```{r}
+baltimore_homicides <- read_rds("data/baltimore_homicides.rds")
+baltimore_tract_demo <- read_rds("data/baltimore_tract_demographics.rds")
+baltimore_tract_shapefiles <- read_rds("data/baltimore_tract_shapefiles.rds")
+```
+
+## Questions
+
+**Q1** Are homicides that occur in majority white Census tracts in Baltimore solved at a higher rate than homicides in non-majority white Baltimore census tracts?
+* Write up your findings in three paragraphs that could be dropped into a news story, with the answer to the question as the lede. 
+* Include any other relevant details.
+* Output a table with relevant results. 
+* Output at least one map visualization pertinent to your finding. 
+
+**A1** 
+```{r}
+majority_white <- baltimore_tract_demo %>%
+  mutate(pct_white = (white_pop/total_pop)*100) %>%
+  select(geoid,name,pct_white) %>%
+  mutate(majority_pop = case_when(
+    pct_white > 50 ~ "majority_white",
+    TRUE ~ "not_majority_white"
+  ))
+```
+
+```{r}
+majority_white <- majority_white %>%
+  inner_join(baltimore_tract_shapefiles) %>%
+  st_as_sf()
+```
+
+```{r}
+shootings_geo <- baltimore_homicides %>%
+  st_join(majority_white) %>% 
+  as_tibble()
+```
+
+
+```{r}
+shootings_disposition <- shootings_geo %>%
+  group_by(majority_pop,disposition) %>% 
+  count() %>% 
+  pivot_wider(names_from=disposition, values_from=n) %>%
+  clean_names() %>% 
+  mutate(total_shootings = closed_by_arrest+closed_without_arrest+open_no_arrest) %>%
+  mutate(unsolved = open_no_arrest + closed_without_arrest) %>%
+  mutate(pct_unsolved = unsolved/total_shootings*100)
+
+
+
+ggplot() +
+  geom_sf(data=baltimore_tract_shapefiles) +
+  geom_sf(data=baltimore_homicides)
+```
+
+
+A: Baltimore homicides are left unsolved significantly more in communities where white people are not the majority. 
+With a rate of 66.2%, there are significantly more homicides unsolved than solved in non-white majority communities. There are 46.4% of homicides left unsolved in majority white communities. 
+The total homicides in these communities is also quite skewed. Between 2007 and 2017, there were 239 total shootings in Baltimore's majority white communities. For non-white majority communities in the same stretch, there were 2588 total shootings. 
