@@ -1,0 +1,110 @@
+#lab_10
+Sean Mussenden, Aug 16, 2022
+
+## About this lab
+
+To complete this lab, you need to:
+* write code in empty codeblocks provided to answer questions included (look for **Q**).
+* write out the answer in the form of a complete sentence in the space given (look for **A**).
+
+When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+## Load libraries and establish settings
+**Task**: Load janitor, the tidyverse, sf and leaflet.
+```{r}
+library(janitor)
+library(tidyverse)
+library(sf)
+library(leaflet)
+```
+
+## Motivation for analysis
+
+You are reporting a story looking at how the pervasiveness of gun violence affects student learning, and decide you want to identify a school in Washington, D.C. that has had multiple gunshot events on or very near school grounds during the schoolday when school was open.
+
+You have a dataframe of timestamped and geolocated gunshots between 2014 and 2022, captured from a network of Shot Spotter microphones located throughout the city that use sound to triangulate shot locations. 
+
+You also have a dataframe of when schools were open in 2019 and another with the geolocation of each school. 
+
+In answering the following questions, you'll want to only examine shooting events that:
+
+* Occurred on school days when school was open in calendar year 2019.
+* Occurred during school hours (defined as 7 a.m. to 4 p.m.).
+* Occurred within 200 meters of a school.
+* Are not gunshots that might have been mislabeled as fireworks by the Shot Spotter network. 
+
+## Load data
+
+You have been given four dataframes to load.  One is a regular dataframe. The other three are spatial dataframes.  
+
+The dataframes are:
+
+* shot_spotter.rds | spatial points | location of gunshots in DC between 2014 and 2022.  
+  * Triangulated latitude and longitude position of gunshots based on sound collected from microphones across the city. https://www.shotspotter.com/law-enforcement/gunshot-detection-technology/
+  * Details on the data: https://opendata.dc.gov/datasets/89bfd2aed9a142249225a638448a5276_29/about
+* washington_schools.rds | spatial points | location of each school in Washington.
+* dc_school_days_2019.rds | regular dataframe | indicates whether DC schools were open and closed on a given date.
+* washington_shapefile.rds | spatial polygon | outline of Washington DC, if you need it for mapping. You don't have to use this, only if you find it helpful to visualize things.
+```{r}
+dc_school_days_2019 <-read_rds("data/dc_school_days_2019.rds")
+shot_spotter <-read_rds("data/shot_spotter.rds")
+washington_schools <-read_rds("data/washington_schools.rds")
+washington_shapefile <-read_rds("data/washington_shapefile.rds")
+
+
+```
+
+## Questions
+
+**Q1** Students in what Washington school were exposed to the most gunshot events during school hours in 2019? How many?
+**A1** 
+```{r}
+shot_spotter_2019 <- shot_spotter %>% 
+  filter(year == 2019) 
+
+```
+
+```{r}
+washington_schools_buffered <- washington_schools%>%
+  mutate(geometry = st_buffer(geometry, dist=200))
+schools_homicides <- washington_schools_buffered %>%
+  st_join(shot_spotter_2019, left="FALSE")
+
+shooting_open_closed <- schools_homicides %>%
+  inner_join(dc_school_days_2019, by="date")
+shooting_open <- shooting_open_closed %>% 
+  clean_names() %>% 
+  filter(school_status == "school_open") %>% 
+  filter(!str_detect(type,"Gunshot_or_Firecracker")) %>% 
+  filter(between(hour, 7,15))
+schools <- shooting_open %>% 
+  as.tibble() %>% 
+    group_by(school_name, address) %>% 
+  count(school_name)
+
+```
+Ketcham ES has seen the most shootings in 2019 during school hours and on days the school is open with 8.
+**Q2** How many distinct shooting events were there within 200 meters of any DC school in 2019, during school hours?
+**A2** 
+```{r}
+nrow(shooting_open)
+```
+The work I did for question 1 seems to have accidentially answered this question for me. There were 132 shootings within 200 meters of a DC school during school hours in 2019.
+
+**Q3** How many distinct schools had a shooting event within 200 meters in 2019, during school hours?
+**A3** 
+```{r}
+shooting_open %>%
+  distinct(school_name) %>%
+  count()
+```
+There were 74 distinct schools that experienced shootings within 200 meters during school hours in 2019. 
+
+**Q4** Produce a dataframe with the shootings that occurred near the answer to question 1. Write an anecdotal top of a story centering on shootings near that school in 2019, followed by a few paragraphs of context from the answers to question 2 and 3.  
+**A4**
+```{r}
+ketcham <- shooting_open %>% 
+  filter(school_name == "Ketcham ES")
+```
+Ketcham Elementary School experienced the most shootings in 2019 within 200 meters of the school with 8. Overall, there were 74 different schools throughout Washington DC that had a shooting occur within 200 meters during that year. That is 31% of total schools in the district, as Washington DC has 239 total schools. In total, there were 132 total shootings in the district that happened within 200 meters of a school in 2019.
+
