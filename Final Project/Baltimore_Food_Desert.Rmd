@@ -441,13 +441,13 @@ leaflet() %>%
               weight = 1.5,
               smoothFactor = 0.2,
               fillOpacity = 0.1,
-              label = majority_white$neighborhood) %>% 
+              label = low_income$neighborhood) %>% 
   addPolygons(data=high_income,
               color = ("#fbd009"),
               weight = 1.5,
               smoothFactor = 0.2,
               fillOpacity = 0.1,
-              label = non_majority_white$neighborhood) %>%
+              label = high_income$neighborhood) %>%
   addCircles(data=baltimore_stores,
              weight = 2,
              color = ~pal(store_type),
